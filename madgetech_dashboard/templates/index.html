@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CCA2 Environmental Monitor</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, sans-serif;
+      background: #08111f;
+      color: #f4f7fb;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(circle at top, #18355d 0, #08111f 48%, #050a12 100%);
+    }
+    .panel {
+      width: fit-content;
+      min-height: min(92vh, 680px);
+      padding: clamp(24px, 4vw, 52px);
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 28px;
+      margin: 0 auto;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      gap: 20px;
+    }
+    h1 {
+      margin: 0;
+      font-size: clamp(28px, 4vw, 52px);
+      letter-spacing: .02em;
+    }
+    .model { color: #9fb2cc; font-size: clamp(14px, 1.7vw, 22px); }
+    .readings {
+      display: grid;
+      grid-template-columns: repeat(2, 600px);
+      gap: clamp(18px, 3vw, 50px);
+      width: 100%;
+      justify-content: center;
+      align-items: center;
+    }
+    .card {
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.055);
+      border-radius: 28px;
+      padding: clamp(30px, 4.5vw, 55px);
+      min-height: 450px;
+      display: grid;
+      align-content: center;
+      text-align: center;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 18px 60px rgba(0,0,0,.25);
+    }
+    .label {
+      color: #a8bad1;
+      font-size: clamp(18px, 2.2vw, 30px);
+      margin-bottom: 12px;
+    }
+    .value {
+      font-size: clamp(64px, 11vw, 150px);
+      font-weight: 760;
+      line-height: .95;
+      letter-spacing: -.055em;
+    }
+    .unit {
+      font-size: .31em;
+      color: #c8d4e4;
+      margin-left: .08em;
+      letter-spacing: 0;
+    }
+    footer {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 20px;
+      color: #a8bad1;
+      font-size: clamp(14px, 1.6vw, 20px);
+    }
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 650;
+      color: #e8f5ee;
+    }
+    .dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #36d17c;
+      box-shadow: 0 0 18px rgba(54,209,124,.85);
+    }
+    .offline .dot {
+      background: #ff5d68;
+      box-shadow: 0 0 18px rgba(255,93,104,.8);
+    }
+    .error {
+      grid-column: 1 / -1;
+      padding: 24px;
+      border: 1px solid rgba(255,93,104,.45);
+      background: rgba(255,93,104,.12);
+      border-radius: 18px;
+      font-size: 20px;
+      white-space: pre-wrap;
+    }
+    .alarm-banner {
+      width: 100%;
+      padding: 24px;
+      border-radius: 20px;
+      background: #7f1d1d;
+      color: white;
+      text-align: center;
+      border: 3px solid #fecaca;
+      box-shadow: 0 0 35px rgba(255, 0, 0, 0.8);
+      animation: alarmPulse 1s infinite;
+    }
+
+    .alarm-title {
+      font-size: clamp(28px, 5vw, 64px);
+      font-weight: 800;
+    }
+
+    .alarm-banner div:last-child {
+      margin-top: 8px;
+      font-size: clamp(18px, 2.5vw, 30px);
+    }
+
+    body.alarm-mode {
+      background: #7f1d1d;
+      animation: screenFlash 1s infinite;
+    }
+
+    body.alarm-mode .card {
+      background: rgba(70, 0, 0, 0.75);
+      border-color: rgba(255, 255, 255, 0.5);
+    }
+
+    body.alarm-mode .panel {
+      color: white;
+    }
+
+    @keyframes alarmPulse {
+      0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+
+      50% {
+        transform: scale(1.02);
+        opacity: 0.75;
+      }
+    }
+
+    @keyframes screenFlash {
+      0%, 100% {
+        background: #7f1d1d;
+      }
+
+      50% {
+        background: #dc2626;
+      }
+    }
+    @media (max-width: 700px) {
+      .readings { grid-template-columns: 1fr; }
+      footer { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="panel">
+    <header>
+      <div id="alarm-banner" class="alarm-banner" hidden>
+        <div class="alarm-title">⚠ ENVIRONMENTAL ALARM</div>
+        <div id="alarm-details">Check the monitored area immediately</div>
+      </div>
+      <div>
+        <h1 id="logger-name">CCA2</h1>
+        <div class="model" id="model">Environmental Monitor</div>
+      </div>
+      <div class="model" id="clock"></div>
+    </header>
+
+    <section class="readings" id="readings">
+      <article class="card">
+        <div class="label">Temperature</div>
+        <div class="value"><span id="temp">--.-</span><span class="unit">°F</span></div>
+      </article>
+      <article class="card">
+        <div class="label">Humidity</div>
+        <div class="value"><span id="humidity">--.-</span><span class="unit">% RH</span></div>
+      </article>
+    </section>
+
+    <footer>
+      <div>
+        Last sensor reading: <span id="reading-time">waiting…</span>
+        · Battery: <span id="battery">--</span>%
+      </div>
+      <div class="status offline" id="status">
+        <span class="dot"></span>
+        <span id="status-text">Connecting</span>
+      </div>
+    </footer>
+  </main>
+
+  <script>
+    const el = id => document.getElementById(id);
+
+    function formatLocalTime(iso) {
+      if (!iso) return "unknown";
+      const date = new Date(iso);
+      if (Number.isNaN(date.getTime())) return "unknown";
+      return date.toLocaleString([], {
+        month: "short", day: "numeric",
+        hour: "numeric", minute: "2-digit", second: "2-digit"
+      });
+    }
+
+    function render(data) {
+      const errorBox = document.querySelector(".error");
+      if (errorBox) errorBox.remove();
+
+      if (!data.ok) {
+        el("status").classList.add("offline");
+        el("status-text").textContent = "Data unavailable";
+        const box = document.createElement("div");
+        box.className = "error";
+        box.textContent = data.error || "Unknown error";
+        el("readings").appendChild(box);
+        return;
+      }
+
+      el("logger-name").textContent = data.name || "CCA2";
+      el("model").textContent = data.model || "Environmental Monitor";
+      el("temp").textContent =
+        Number.isFinite(data.temperature_f) ? data.temperature_f.toFixed(1) : "--.-";
+      el("humidity").textContent =
+        Number.isFinite(data.humidity_rh) ? data.humidity_rh.toFixed(1) : "--.-";
+      el("battery").textContent = data.battery_percent ?? "--";
+      el("reading-time").textContent = formatLocalTime(data.reading_time_utc);
+
+      const online = Boolean(data.connected);
+      el("status").classList.toggle("offline", !online);
+      el("status-text").textContent = online ? "ONLINE" : "OFFLINE";
+
+      const alarmBanner = el("alarm-banner");
+      const alarmDetails = el("alarm-details");
+
+      if (data.alarm_active) {
+        document.body.classList.add("alarm-mode");
+        alarmBanner.hidden = false;
+
+        alarmDetails.textContent =
+          `${data.alarm_count} active alarm${data.alarm_count === 1 ? "" : "s"} — check temperature and humidity immediately`;
+      } else {
+        document.body.classList.remove("alarm-mode");
+        alarmBanner.hidden = true;
+        alarmDetails.textContent = "";
+      }
+    }
+
+    async function refresh() {
+      try {
+        const response = await fetch("/api/current", { cache: "no-store" });
+        render(await response.json());
+      } catch (error) {
+        render({ ok: false, error: String(error) });
+      }
+    }
+
+    function tickClock() {
+      el("clock").textContent = new Date().toLocaleTimeString();
+    }
+
+    // The screen and clock update every second.
+    setInterval(tickClock, 1000);
+    setInterval(refresh, 60000);
+    tickClock();
+    refresh();
+  </script>
+</body>
+</html>
