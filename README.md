@@ -53,7 +53,7 @@ This project was developed during my IT internship at Swift Engineering to provi
 
 Clone the repository
 
-git clone https://github.com/yourusername/madgetech-live-dashboard.git
+git clone https://github.com/zerakayoub/madgetech-live-dashboard.git
 
 Install dependencies
 
