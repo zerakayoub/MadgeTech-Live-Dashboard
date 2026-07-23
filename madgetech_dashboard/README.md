@@ -1,4 +1,4 @@
-# MadgeTech CCA2 Wall Dashboard
+# How To Use
 
 ## Important security step
 
